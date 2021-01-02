@@ -1,29 +1,27 @@
-name:="keepassxc"
-home:="$(shell echo ~/.keepassxc)"
-usergroup:=$(shell echo `id -u`:`id -g`)
+name:=keepassxc
+
+args:=--rm \
+	-e DISPLAY=unix${DISPLAY} \
+	--name $(name) \
+	-v ${HOME}/.config/keepassxc:/root/.config/keepassxc \
+	-v /etc/machine-id:/etc/machine-id:ro \
+	-v /tmp/.X11-unix:/tmp/.X11-unix \
+	-v /usr/share/X11/xkb/:/usr/share/X11/xkb/:ro
 
 # Default target
 container:
-	docker build -t $(name) .
+	podman build -t $(name) .
 
 clean:
-	docker container prune -f
+	podman container prune -f
 
 run: container
-	#echo $(shell echo ~)
-	docker run --rm --detach --name $(name) \
-		-v $(home)/:/home/keepassxc/ \
-		-v /tmp/.X11-unix:/tmp/.X11-unix:ro \
-		--env DISPLAY=$(shell echo ${DISPLAY}) \
-		--user $(usergroup) \
-		$(name)
+	podman run $(args) -d $(name)
 
 stop:
-	docker stop $(name)
+	podman stop $(name)
 
 test: container
-	docker run --rm -it \
-		--entrypoint /bin/sh \
-		$(name)
+	podman run $(args) --entrypoint /bin/sh -it $(name)
 
-.PHONY: container run test
+.PHONY: clean container run stop test
